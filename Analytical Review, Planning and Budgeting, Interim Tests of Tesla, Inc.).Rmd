@@ -1,0 +1,1003 @@
+---
+title: "Analytical Review, Planning and Budgeting, Interim Tests of Tesla, Inc.)"
+author: "Krishangi Deka"
+date: "3/30/2021"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Libraries**
+
+All libraries used have been imported here below:
+```{r warning=F, message=F, error=F}
+library(finstr)
+library(xml2)
+library(tidyverse)
+library(kableExtra)
+library(XBRL)
+library(readr)
+library(rtweet)
+library(maps)
+library(tidytext)
+library(tidyverse)
+library(textdata)
+library(ggplot2)
+library(reshape2)
+library(wordcloud)
+library(rvest)
+library(RColorBrewer)
+library(wordcloud)
+library(dplyr)
+library(psych)
+library(tidyverse)
+library(benford.analysis)
+library(kableExtra)
+library(tidyverse)
+library(lubridate)
+library(tidytext)
+library(finreportr)
+library(edgar)
+library(knitr)
+library(kableExtra)
+library(tm)
+library(RCurl)
+library(SnowballC)
+```
+
+
+**File Import**
+
+```{r warning=F, message=F, error=F}
+shipments_journal <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/shipments_journal.csv")
+sales_journal <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/sales_journal.csv")
+receiver_journal <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/receiver_journal.csv")
+real_world_ye_inventory <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/real_world_ye_inventory.csv")
+real_world_fyear_end_ar_ledger <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/real_world_fyear_end_ar_ledger.csv")
+real_world_credit_sales <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/real_world_credit_sales.csv")
+real_world_collections <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/real_world_collections.csv")
+real_world_cash_sales <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/real_world_cash_sales.csv")
+purchase_journal <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/purchase_journal.csv")
+perpetual_inventory_ledger <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/perpetual_inventory_ledger.csv")
+fyear_end_ar_ledger <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/fyear_end_ar_ledger.csv")
+fyear_begin_inventory_ledger <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/fyear_begin_inventory_ledger.csv")
+expenditures <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/expenditures.csv")
+disbursement_journal <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/disbursement_journal.csv")
+deposit_daily <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/deposit_daily.csv")
+daily_ar_balance <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/daily_ar_balance.csv")
+customer_credit_limits <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/customer_credit_limits.csv")
+collections_journal <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/collections_journal.csv")
+ap_ledger <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/ap_ledger.csv")
+allowance_for_uncollectable_ar <- read_csv("D:/University of Illinois at Chicago/Spring21/IDS 523/midterm/523_midterm_files/files/allowance_for_uncollectable_ar.csv")
+```
+
+
+**QUESTION 1: Financial Ratios**
+
+```{r warning=F, message=F, error=F}
+
+xbrl_url2012 <-
+"https://www.sec.gov/Archives/edgar/data/1318605/000119312513096241/tsla-20121231.xml"
+
+xbrl_url2013 <-
+"https://www.sec.gov/Archives/edgar/data/1318605/000119312514069681/tsla-20131231.xml"
+
+xbrl_url2014 <-
+"https://www.sec.gov/Archives/edgar/data/1318605/000156459015001031/tsla-20141231.xml"
+
+xbrl_url2015 <-
+"https://www.sec.gov/Archives/edgar/data/1318605/000156459016013195/tsla-20151231.xml"
+
+xbrl_url2016 <-
+"https://www.sec.gov/Archives/edgar/data/1318605/000156459017003118/tsla-20161231.xml"
+
+xbrl_url2017 <-
+"https://www.sec.gov/Archives/edgar/data/1318605/000156459018002956/tsla-20171231.xml"
+
+# Get EDGAR data in XBRL format from the sec.gov site
+# parse XBRL (TESLA 10-K reports)
+old_o <- options(stringsAsFactors = FALSE)
+xbrl_data_2012 <- xbrlDoAll(xbrl_url2012)
+xbrl_data_2013 <- xbrlDoAll(xbrl_url2013)
+xbrl_data_2014 <- xbrlDoAll(xbrl_url2014)
+xbrl_data_2015 <- xbrlDoAll(xbrl_url2015)
+xbrl_data_2016 <- xbrlDoAll(xbrl_url2016)
+xbrl_data_2017 <- xbrlDoAll(xbrl_url2017)
+options(old_o)
+
+# With xbrl_get_statements convert sec.gov's XBRL data to a list of lists
+
+st2012 <- xbrl_get_statements(xbrl_data_2012)
+st2013 <- xbrl_get_statements(xbrl_data_2013)
+st2014 <- xbrl_get_statements(xbrl_data_2014)
+st2015 <- xbrl_get_statements(xbrl_data_2015)
+st2016 <- xbrl_get_statements(xbrl_data_2016)
+st2017 <- xbrl_get_statements(xbrl_data_2017)
+
+balance_sheet2012 <- st2012$StatementOfFinancialPositionClassified
+balance_sheet2013 <- st2013$StatementOfFinancialPositionClassified
+balance_sheet2014 <- st2014$StatementConsolidatedBalanceSheets
+balance_sheet2015 <- st2015$StatementConsolidatedBalanceSheets
+balance_sheet2016 <- st2016$StatementConsolidatedBalanceSheets
+balance_sheet2017 <- st2017$StatementConsolidatedBalanceSheets
+
+income2012 <- st2012$StatementOfIncome
+income2013 <- st2013$StatementOfIncome
+income2014 <- st2014$StatementConsolidatedStatementsOfOperations
+income2015 <- st2015$StatementConsolidatedStatementsOfOperations
+income2016 <- st2016$StatementConsolidatedStatementsOfOperations
+income2017 <- st2017$StatementConsolidatedStatementsOfOperations
+
+balance_sheet<- merge(balance_sheet2012, balance_sheet2013)
+balance_sheet<- merge(balance_sheet, balance_sheet2014)
+balance_sheet<- merge(balance_sheet, balance_sheet2015)
+balance_sheet<- merge(balance_sheet, balance_sheet2016)
+balance_sheet<- merge(balance_sheet, balance_sheet2017)
+
+income_statement<- merge(income2012, income2013)
+income_statement<- merge(income_statement, income2014)
+income_statement<- merge(income_statement, income2015)
+income_statement<- merge(income_statement, income2016)
+income_statement<- merge(income_statement, income2017)
+
+
+Teslaconsolidated<- merge(balance_sheet, income_statement)
+
+RatiosTesla<-Teslaconsolidated %>% transmute(
+  date = endDate, 
+  ReturnOnEquity = NetIncomeLoss / StockholdersEquity, 
+  OperatingMargin = OperatingIncomeLoss / Revenues, 
+  CurrentRatio = AssetsCurrent / LiabilitiesCurrent, 
+  QuickRatio = (AssetsCurrent - InventoryNet) / LiabilitiesCurrent, 
+  InventoryTurnRatio = Revenues/ InventoryNet, 
+  DebtToEquity = (Liabilities-LiabilitiesCurrent) / StockholdersEquity, 
+  AccountsRecievableTurnover = (SalesRevenueServicesNet + tsla_SalesRevenueServicesAndOtherNet + tsla_SalesRevenueAutomotive + SalesRevenueGoodsNet + SalesRevenueGoodsNet)/AccountsReceivableNetCurrent, 
+  WorkingCapital = AssetsCurrent - LiabilitiesCurrent)
+
+RatiosTesla
+
+
+```
+
+
+```{r warning=F, message=F, error=F}
+
+#Reading xml files for 2018-2019
+tesla_2018xml <- as_list(read_xml("https://www.sec.gov/Archives/edgar/data/1318605/000156459019003165/tsla-20181231.xml"))
+tesla_2019xml <- as_list(read_xml("https://www.sec.gov/Archives/edgar/data/1318605/000156459020004475/tsla-10k_20191231_htm.xml"))
+
+
+teslaBS_2017 <- GetBalanceSheet("TSLA", 2018)
+teslaAR_2017 <- teslaBS_2017 %>% filter(Metric == "Accounts Receivable Net Current")
+teslaInv_2017 <- teslaBS_2017 %>% filter(Metric == "Inventory Net")
+teslaLiablty_2018 <- tesla_2018xml$xbrl$Liabilities[[1]]
+teslaLiablty_2019 <- tesla_2019xml$xbrl$Liabilities[[1]]
+teslaCL_2018 <- tesla_2018xml$xbrl$LiabilitiesCurrent[[1]]
+teslaCL_2019 <- tesla_2019xml$xbrl$LiabilitiesCurrent[[1]]
+teslaEquity_2018 <- tesla_2018xml$xbrl$StockholdersEquity[[1]]
+teslaEquity_2019 <- tesla_2019xml$xbrl$StockholdersEquity[[1]]
+teslaS_2018 <- tesla_2018xml$xbrl$SalesRevenueAutomotive[[1]]
+teslaS_2019 <- tesla_2019xml$xbrl$SalesRevenueAutomotive[[1]]
+teslaAR_2018 <- tesla_2018xml$xbrl$AccountsReceivableNetCurrent[[1]]
+teslaAR_2019 <- tesla_2019xml$xbrl$AccountsReceivableNetCurrent[[1]]
+teslaCA_2018 <- tesla_2018xml$xbrl$AssetsCurrent[[1]]
+teslaCA_2019 <- tesla_2019xml$xbrl$AssetsCurrent[[1]]
+teslaInv_2018 <- tesla_2018xml$xbrl$InventoryNet[[1]]
+teslaInv_2019 <- tesla_2019xml$xbrl$InventoryNet[[1]]
+teslaCOGS_2018 <- tesla_2019xml$xbrl$CostOfGoodsAndServicesSold[[1]]
+teslaCOGS_2019 <- tesla_2019xml$xbrl$CostOfGoodsAndServicesSold[[1]]
+teslaPE_2018 <- tesla_2018xml$xbrl$PrepaidExpenseAndOtherAssetsCurrent[[1]]
+teslaPE_2019 <- tesla_2019xml$xbrl$PrepaidExpenseAndOtherAssetsCurrent[[1]]
+teslaRev_2018 <- tesla_2018xml$xbrl$Revenues[[1]]
+teslaRev_2019 <- tesla_2019xml$xbrl$Revenues[[1]]
+teslaOE_2018 <- tesla_2019xml$xbrl$OperatingExpenses[[1]]
+teslaOE_2019 <- tesla_2019xml$xbrl$OperatingExpenses[[1]]
+teslaNI_2018 <- tesla_2018xml$xbrl$NetIncomeLoss[[1]]
+teslaNI_2019 <- tesla_2019xml$xbrl$NetIncomeLoss[[1]]
+teslaAR_2018avg <- (as.numeric(teslaAR_2017$Amount[[2]]) + as.numeric(teslaAR_2018))/2
+teslaAR_2019avg <- (as.numeric(teslaAR_2018) + as.numeric(teslaAR_2019))/2
+teslaAvgInv_2018 <- (as.numeric(teslaInv_2017$Amount[[2]]) + as.numeric(teslaInv_2018))/2
+teslaAvgInv_2019 <- (as.numeric(teslaInv_2018) + as.numeric(teslaInv_2019))/2
+
+
+teslaEPS_2018 <- as.numeric(tesla_2018xml$xbrl$EarningsPerShareBasic[[1]]) + as.numeric(tesla_2018xml$xbrl$EarningsPerShareDiluted[[1]])
+teslaEPS_2019 <- as.numeric(tesla_2019xml$xbrl$EarningsPerShareBasic[[1]]) + as.numeric(tesla_2019xml$xbrl$EarningsPerShareDiluted[[1]])
+teslaDER_2018 <- as.numeric(teslaLiablty_2018[[1]])/as.numeric(teslaEquity_2018[[1]])
+teslaDER_2019 <- as.numeric(teslaLiablty_2019[[1]])/as.numeric(teslaEquity_2019[[1]])
+teslaART_2018 <- as.numeric(teslaS_2018)/teslaAR_2018avg
+teslaART_2019 <- as.numeric(teslaS_2019)/teslaAR_2019avg
+teslaQR_2018 <- (as.numeric(teslaCA_2018) - as.numeric(teslaInv_2018) - as.numeric(teslaPE_2018))/as.numeric(teslaCL_2018)
+teslaQR_2019 <- (as.numeric(teslaCA_2019) - as.numeric(teslaInv_2019) - as.numeric(teslaPE_2018))/as.numeric(teslaCL_2019)
+teslaITR_2018 <- as.numeric(teslaCOGS_2018)/teslaAvgInv_2018
+teslaITR_2019 <- as.numeric(teslaCOGS_2019)/teslaAvgInv_2019
+teslaEBIT_2018 <- as.numeric(teslaRev_2018) - as.numeric(teslaCOGS_2018) - as.numeric(teslaOE_2018)
+teslaEBIT_2019 <- as.numeric(teslaRev_2019) - as.numeric(teslaCOGS_2019) - as.numeric(teslaOE_2019)
+teslaOM_2018 <- teslaEBIT_2018/as.numeric(teslaRev_2018)
+teslaOM_2019 <- teslaEBIT_2019/as.numeric(teslaRev_2019)
+teslaPPerE_2018 <- 333.87/teslaEPS_2018
+teslaPPerE_2019 <- 430.38/teslaEPS_2019
+teslaWC_2018 <- as.numeric(teslaCA_2018) - as.numeric(teslaCL_2018)
+teslaWC_2019 <- as.numeric(teslaCA_2019) - as.numeric(teslaCL_2019)
+teslaROE_2018 <- as.numeric(teslaNI_2018)/as.numeric(teslaEquity_2018)
+teslaROE_2019 <- as.numeric(teslaNI_2019)/as.numeric(teslaEquity_2019)
+
+RatiosTesla1 <- RatiosTesla %>% add_row( date = 2018, DebtToEquity = teslaDER_2018,AccountsRecievableTurnover = teslaART_2018, QuickRatio = teslaQR_2018,InventoryTurnRatio = teslaITR_2018,OperatingMargin = teslaOM_2018,WorkingCapital = teslaWC_2018,ReturnOnEquity = teslaROE_2018)
+
+RatiosTesla1 <- RatiosTesla1 %>% add_row(date = 2019, DebtToEquity = teslaDER_2019,AccountsRecievableTurnover = teslaART_2019, QuickRatio = teslaQR_2019,InventoryTurnRatio = teslaITR_2019,OperatingMargin = teslaOM_2019,WorkingCapital = teslaWC_2019,ReturnOnEquity = teslaROE_2019)
+
+#PERatio = teslaPPerE_2018, EarningsPerShare =  teslaEPS_2018,
+#PERatio = teslaPPerE_2019, EarningsPerShare =  teslaEPS_2019,
+RatiosTesla1 %>%
+  kable(caption="Financial Ratios", digits = 2, format.args = list(scientific = FALSE))
+
+```
+
+Let us now see the financial ratios for Tesla's competitor - Ford:
+
+```{r warning=F, message=F, error=F}
+
+"Ford Motors"
+
+fordxbrl_url2012 <- "https://www.sec.gov/Archives/edgar/data/37996/000003799613000014/f-20121231.xml"
+fordxbrl_url2013 <- "https://www.sec.gov/Archives/edgar/data/37996/000003799614000010/f-20131231.xml"
+fordxbrl_url2014 <- "https://www.sec.gov/Archives/edgar/data/37996/000003799615000013/f-20141231.xml"
+fordxbrl_url2015 <- "https://www.sec.gov/Archives/edgar/data/37996/000003799616000092/f-20151231.xml"
+fordxbrl_url2016 <- "https://www.sec.gov/Archives/edgar/data/37996/000003799617000013/f-20161231.xml"
+fordxbrl_url2017 <- "https://www.sec.gov/Archives/edgar/data/37996/000003799618000015/f-20171231.xml"
+fordxbrl_url2018 <- "https://www.sec.gov/Archives/edgar/data/37996/000003799619000012/f-20181231.xml"
+
+old_o <- options(stringsAsFactors = FALSE)
+fordxbrl_2012 <- xbrlDoAll(fordxbrl_url2012)
+fordxbrl_2013 <- xbrlDoAll(fordxbrl_url2013)
+fordxbrl_2014 <- xbrlDoAll(fordxbrl_url2014)
+fordxbrl_2015 <- xbrlDoAll(fordxbrl_url2015)
+fordxbrl_2016 <- xbrlDoAll(fordxbrl_url2016)
+fordxbrl_2017 <- xbrlDoAll(fordxbrl_url2017)
+# fordxbrl_2018 <- xbrlDoAll(fordxbrl_url2018)
+options(old_o)
+
+fordst2012 <- xbrl_get_statements(fordxbrl_2012)
+fordst2013 <- xbrl_get_statements(fordxbrl_2013)
+fordst2014 <- xbrl_get_statements(fordxbrl_2014)
+fordst2015 <- xbrl_get_statements(fordxbrl_2015)
+fordst2016 <- xbrl_get_statements(fordxbrl_2016)
+fordst2017 <- xbrl_get_statements(fordxbrl_2017)
+# fordst2018 <- xbrl_get_statements(fordxbrl_2018)
+
+fordbalance_sheet2012 <- fordst2012$ConsolidatedAndSectorBalanceSheet
+fordbalance_sheet2013 <- fordst2013$ConsolidatedAndSectorBalanceSheet
+fordbalance_sheet2014 <- fordst2014$ConsolidatedAndSectorBalanceSheet
+fordbalance_sheet2015 <- fordst2015$ConsolidatedAndSectorBalanceSheet
+fordbalance_sheet2016 <- fordst2016$ConsolidatedBalanceSheet
+fordbalance_sheet2017 <- fordst2017$ConsolidatedBalanceSheet
+# fordbalance_sheet2018 <- fordst2018$ConsolidatedBalanceSheets
+
+fordincome2012 <- fordst2012$ConsolidatedAndSectorIncomeStatement
+fordincome2013 <- fordst2013$ConsolidatedAndSectorIncomeStatement
+fordincome2014 <- fordst2014$ConsolidatedAndSectorIncomeStatement
+fordincome2015 <- fordst2015$ConsolidatedAndSectorIncomeStatement
+fordincome2016 <- fordst2016$ConsolidatedIncomeStatement
+fordincome2017 <- fordst2017$ConsolidatedIncomeStatement
+# fordincome2018 <- fordst2018$ConsolidatedIncomeStatements
+
+fordbalance_sheet <- merge(fordbalance_sheet2012, fordbalance_sheet2013)
+fordbalance_sheet <- merge(fordbalance_sheet, fordbalance_sheet2014)
+fordbalance_sheet <- merge(fordbalance_sheet, fordbalance_sheet2015)
+fordbalance_sheet <- merge(fordbalance_sheet, fordbalance_sheet2016)
+fordbalance_sheet <- merge(fordbalance_sheet, fordbalance_sheet2017)
+# fordbalance_sheet <- merge(fordbalance_sheet, fordbalance_sheet2018)
+
+fordincome_statement <- merge(fordincome2012, fordincome2013)
+fordincome_statement <- merge(fordincome_statement, fordincome2014)
+fordincome_statement <- merge(fordincome_statement, fordincome2015)
+fordincome_statement <- merge(fordincome_statement, fordincome2016)
+fordincome_statement <- merge(fordincome_statement, fordincome2017)
+# fordincome_statement <- merge(fordincome_statement, fordincome2018)
+
+fordConsolidated <- merge(fordbalance_sheet, fordincome_statement)
+
+RatiosFord <- fordConsolidated %>% transmute(
+  date = endDate, 
+  DebtToEquity = Liabilities/StockholdersEquity ,
+  ARTurnover = Revenues / AccountsReceivableNetCurrent,
+  QuickRatio = (AssetsCurrent - InventoryNet) / LiabilitiesCurrent,
+  InventoryTurnover = CostOfGoodsAndServicesSold / InventoryNet,
+  OperatingMargin = NetIncomeLoss / Revenues,
+  PERatio = NetIncomeLossAvailableToCommonStockholdersBasic / AdditionalPaidInCapitalCommonStock,
+  EarningsPerShare = RetainedEarningsAccumulatedDeficit / AdditionalPaidInCapitalCommonStock,
+  WorkingCapital = AssetsCurrent - LiabilitiesCurrent,
+  ReturnOnEquity = ProfitLoss / StockholdersEquity)
+
+
+RatiosFord
+
+```
+
+From priliminary investigation, I can see that values for Ford are all over the place and no proper insight can be drawn from the values. Therefore, I would not be investigating and plotting it further. 
+
+Let us now see the ratios for General Motors(GM).
+
+```{r}
+
+"General Motors (GM)"
+
+gmxbrl_2012 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785813000025/gm-20121231.xml"
+gmxbrl_2013 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785814000043/gm-20131231.xml"
+gmxbrl_2014 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785815000036/gm-20141231.xml"
+gmxbrl_2015 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785816000255/gm-20151231.xml"
+gmxbrl_2016 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785817000028/gm-20161231.xml"
+gmxbrl_2017 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785818000022/gm-20171231.xml"
+gmxbrl_2018 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785819000033/gm-20181231.xml"
+gmxbrl_2019 <- "https://www.sec.gov/Archives/edgar/data/1467858/000146785820000028/gm201910k_htm.xml"
+
+old_o <- options(stringsAsFactors = FALSE)
+gmxbrl_2012 <- xbrlDoAll(gmxbrl_2012)
+gmxbrl_2013 <- xbrlDoAll(gmxbrl_2013)
+gmxbrl_2014 <- xbrlDoAll(gmxbrl_2014)
+gmxbrl_2015 <- xbrlDoAll(gmxbrl_2015)
+gmxbrl_2016 <- xbrlDoAll(gmxbrl_2016)
+gmxbrl_2017 <- xbrlDoAll(gmxbrl_2017)
+options(old_o)
+
+GMst2012 <- xbrl_get_statements(gmxbrl_2012)
+GMst2013 <- xbrl_get_statements(gmxbrl_2013)
+GMst2014 <- xbrl_get_statements(gmxbrl_2014)
+GMst2015 <- xbrl_get_statements(gmxbrl_2015)
+GMst2016 <- xbrl_get_statements(gmxbrl_2016)
+GMst2017 <- xbrl_get_statements(gmxbrl_2017)
+
+GMbalance_sheet2012 <- GMst2012$ConsolidatedBalanceSheets
+GMbalance_sheet2013 <- GMst2013$ConsolidatedBalanceSheets
+GMbalance_sheet2014 <- GMst2014$ConsolidatedBalanceSheets
+GMbalance_sheet2015 <- GMst2015$ConsolidatedBalanceSheets
+GMbalance_sheet2016 <- GMst2016$ConsolidatedBalanceSheets
+GMbalance_sheet2017 <- GMst2017$ConsolidatedBalanceSheets
+
+GMincome2012 <- GMst2012$ConsolidatedIncomeStatements
+GMincome2013 <- GMst2013$ConsolidatedIncomeStatements
+GMincome2014 <- GMst2014$ConsolidatedIncomeStatements
+GMincome2015 <- GMst2015$ConsolidatedIncomeStatements
+GMincome2016 <- GMst2016$ConsolidatedIncomeStatements
+GMincome2017 <- GMst2017$ConsolidatedIncomeStatements
+
+GMbalance_sheet <- merge(GMbalance_sheet2012, GMbalance_sheet2013)
+GMbalance_sheet <- merge(GMbalance_sheet, GMbalance_sheet2014)
+GMbalance_sheet <- merge(GMbalance_sheet, GMbalance_sheet2015)
+GMbalance_sheet <- merge(GMbalance_sheet, GMbalance_sheet2016)
+GMbalance_sheet <- merge(GMbalance_sheet, GMbalance_sheet2017)
+
+GMincome_statement <- merge(GMincome2012, GMincome2013)
+GMincome_statement <- merge(GMincome_statement, GMincome2014)
+GMincome_statement <- merge(GMincome_statement, GMincome2015)
+GMincome_statement <- merge(GMincome_statement, GMincome2016)
+GMincome_statement <- merge(GMincome_statement, GMincome2017)
+
+
+GMConsolidated <- merge(GMbalance_sheet, GMincome_statement)
+
+RatiosGM<-GMConsolidated %>% transmute(
+  date = endDate, 
+  ReturnOnEquity =  NetIncomeLoss / StockholdersEquity, 
+  OperatingMargin = OperatingIncomeLoss / Revenues, 
+  CurrentRatio = AssetsCurrent / LiabilitiesCurrent, 
+  QuickRatio = (AssetsCurrent - InventoryNet) / LiabilitiesCurrent, 
+  InventoryTurnRatio = Revenues/ InventoryNet, 
+  DebtToEquity = (Liabilities-LiabilitiesCurrent) / StockholdersEquity, 
+  AccountsRecievableTurnover = SalesRevenueNet/AccountsNotesAndLoansReceivableNetCurrent, 
+  WorkingCapital = AssetsCurrent - LiabilitiesCurrent)
+
+RatiosGM
+
+```
+
+Overall, Tesla’s inventory turnover is increasing which is a good sign in the market. Apart from that the debt-to-equity ratio decreased which is also a good sign for Tesla. ROE is increasing which indicates that the company is generating profit without requiring as much investment. Overall, it can be said that Tesla is slowly and steadily gaining its foot on the market. 
+While comparing these ratios, it can be clearly seen that Ford and GM have higher working capital, inventory turnovers, but this is because most of them have been in the market for a very long time. 
+
+
+**QUESTION 2: Visualization of Technical Metrics**
+
+```{r warning=F, message=F, error=F}
+
+RatiosTesla['date']<-2011:2017
+#plotting all the ratios
+plot_readyTesla<-reshape2::melt(RatiosTesla[1:7],id.var='date')
+ggplot(plot_readyTesla, aes(x=date, y=value, col=variable)) + geom_line() + ggtitle("Tesla")
+#show(p)
+
+
+RatiosFord['date']<-2012:2017
+#plotting all the ratios
+plot_readyFord<-reshape2::melt(RatiosFord[1:7],id.var='date')
+ggplot(plot_readyFord, aes(x=date, y=value, col=variable)) + geom_line() + ggtitle("Ford")
+#show(p)
+
+
+RatiosGM['date']<-2011:2017
+#plotting all the ratios
+plot_readyGM<-reshape2::melt(RatiosGM[1:7],id.var='date')
+ggplot(plot_readyGM, aes(x=date, y=value, col=variable)) + geom_line() + ggtitle("General Motors")
+#show(p)
+
+#Tesla's Ratios are better than what GM has to present.
+
+```
+
+Tesla: Tesla has high debt to equity ratio and high quick ratio which is normal for a new company in any industry. Their ratios seem to be good on closer observation when compared to others.
+Ford: Their ratios are looking around all over the place. they have infinite and -infinite values which suggest that some key components are not listed in the statements.
+GM: They have a high working capital which overshadows all the other ratios, the high working capital seems to be normal since GM is almost a 100 years old company. 
+
+
+**QUESTION 3:  Intelligence Scanning with Twitter**
+
+```{r warning=F, message=F, error=F}
+
+if (!requireNamespace("devtools", quietly = TRUE)) {
+  install.packages("devtools")
+}
+
+create_token(
+  app = "AuditUIC",
+  consumer_key = 't1EcFeL2HtSp4k1ZhGFx4Ciw8',
+  consumer_secret =  'RuCjnibEF0kGlKSQMgHyHsXcbwCObMDcgnweMJdQtvDOsDM7F3',
+  access_token = '1272250817064710147-JkExkifYwXjU1lhPgDNTwruRlTFqLJ',
+  access_secret = 'AAck3flxmHPyfmwEQ1ZiZciMsF7Kyd1vqhkKvuc9sxjfP')
+
+stream_tweets(
+q = "Tesla, Elon Musk, Model 3, Model Y, Model X, Model S, EV, Electric, Vehicle, Car, SpaceX",
+timeout = 200,
+parse = FALSE,
+file_name = "tweets_tesla.json")
+
+```
+
+```{r warning=F, message=F, error=F}
+tweets_tesla <- parse_stream("tweets_tesla.json")
+
+# plot time series of tweets
+tweets_tesla %>%
+  ts_plot("1 second") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Frequency of #Tesla Twitter statuses from past 1 second",
+    subtitle = "Twitter status (tweet) counts aggregated using 1 second intervals",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+  )
+
+```
+
+This plot shows the number of tweets that were parsed in one second. The graph shows that there are 10 tweets per second on an average and it peaked at 17 tweets per second. 
+
+```{r warning=F, message=F, error=F}
+
+reg <- "([^A-Za-z\\d#@']|'(?![A-Za-z\\d#@]))"
+tweet_words <- 
+  tweets_tesla %>%
+  select(user_id,source,created_at,text) %>% 
+  filter(!str_detect(text, '^"')) %>%
+  mutate(text = str_replace_all(text, "https://t.co/[A-Za-z\\d]+|&amp;", "")) %>%
+  unnest_tokens(word, text, token = "regex", pattern = reg) %>%
+  filter(!word %in% stop_words$word,
+         str_detect(word, "[a-z]"))
+
+
+sentmnt <- inner_join(
+  get_sentiments("nrc"),
+  tweet_words, 
+  by="word") %>% 
+  count(sentiment)  
+
+
+ggplot(sentmnt, aes(sentiment, n)) + 
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("Sentiment") +
+  ylab("Frequency expressed in tweets")
+
+```
+
+The general perception of Tesla seems to be positive according to the sentiments followed by negative sentiments which is closely trailed by trustworthiness in people's minds. So we can say that the overall perception of Tesla amongst the general population is good.   
+
+
+```{r warning=F, message=F, error=F}
+
+#head(get_sentiments("nrc"))
+
+lexmatrix <- matrix(
+ c("tesla", "fast",
+   "Model S", "sexy",
+ "Model 3", "ecstatic",
+ "Model X", "excited",
+ "Model Y", "wow",
+ "gm", "competitor",
+ "auto", "interested",
+ "car", "interested",
+ "electric", "interested",
+ "honda", "Competitor",
+ "electric vehicle", "interested",
+ "environment", "Savetheworld",
+ "toyota", "Competitor",
+ "ford", "Competitor"
+),
+ncol=2,
+byrow=TRUE
+ ) %>% as.data.frame()
+
+colnames(lexmatrix) <- c("word", "sentiment")
+lexmatrix <- rbind(lexmatrix, get_sentiments("nrc"))
+
+teslasentmnt <- inner_join(
+  lexmatrix,
+  tweet_words,
+  by="word") %>%
+  count(sentiment)
+
+
+p <- ggplot(teslasentmnt, aes(sentiment, n)) + 
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("Sentiment") +
+  ylab("Frequency expressed in tweets")
+ 
+p
+
+wordcloud(tweet_words$word, max.words = 200, colors = 'blue')
+
+```
+The most frequent word occurring in the tweets is car followed by other words with almost the same intensity, most of which show positive perception amongst people. Overall, lesser negative sentiments has been observed in the wordcloud. 
+
+
+**QUESTION 4: Extract Intelligence from Product User Forums and Visualize using Wordcloud**
+
+```{r warning=F, message=F, error=F}
+                
+## Copy the URL of the page you are scraping
+url <- "https://forums.tesla.com/discussion/58068/supercharger-tips-and-reviews"
+
+
+## Extract the reviews in the CSS ".even" selector
+reviews <- url %>%
+    read_html() %>%
+    html_nodes(".pageBox , #main-body .Discussion")
+                 
+## Pull the text out of the reviews
+quote <- reviews %>%  html_text()
+                 
+## Turn the character string "quote" into a data.frame and View
+data.frame(quote, stringsAsFactors = FALSE) %>% View()
+                 
+pal2 <- brewer.pal(8,"Dark2") ## from RColorBrewer
+
+wordcloud(quote, colors=pal2)
+
+```
+
+The article on tesla forum was based on supercharger tips and reviews: The wordcloud generated pops out the word "open" being the most frequently occurring word. People are concerned about what is "around" the supercharger; how much time ("hour") does it take to fill up batteries; if there are "restrooms" near the "stations" amongst other concerns. 
+
+
+**QUESTION 5: Planning and Risk Assessment**
+
+I have used the files in the "523_midterm_files.zip" to compute corresponding amounts for every transaction.
+```{r warning=F, message=F, error=F}
+
+Sales <- sum(sales_journal$collection_amount)
+Sales
+Sales_avg <- mean(sales_journal$collection_amount)
+Sales_avg
+# Initial Risk intel for Sales is 2 because sales is a high value account
+
+Sales_Returns <-sum(sales_journal$sales_return * sales_journal$sales_unit_price)
+Sales_Returns
+Returns_avg <- mean(sales_journal$sales_return * sales_journal$sales_unit_price)
+Returns_avg
+# Initial Risk intel for Returns is 1 because returns is a low value account
+
+Cost_of_Goods_Sold <- sum(sales_journal$sales_count * sales_journal$unit_cost)
+Cost_of_Goods_Sold
+avgcgs <- mean(sales_journal$sales_count * sales_journal$unit_cost)
+avgcgs
+# Initial Risk intel for CGS is 2 because  CGS is a high value account
+
+Purchases <- sum(purchase_journal$po_count * purchase_journal$unit_cost)
+Misc_Expenses <- sum(expenditures$amount)
+Cash <- sum(deposit_daily$deposit_amount) - Purchases - Misc_Expenses 
+Cash
+Cash_avg <- mean(deposit_daily$deposit_amount)
+Cash_avg
+# Initial Risk intel for Cash is 2 because  Cash is a high value account
+
+AR <- sum(fyear_end_ar_ledger$amount)
+AR
+avgAR <- mean(fyear_end_ar_ledger$amount)
+avgAR
+# Initial Risk intel for AR is 1 because  AR is a low value account
+
+YE_Inventory <- perpetual_inventory_ledger %>% group_by(sku) %>%
+                inner_join(fyear_begin_inventory_ledger, by="sku") %>% slice(n()) %>%
+                mutate(inv_extended = unit_cost * stock_on_hand.x) %>%
+                ungroup() %>% select(inv_extended) %>% sum()
+YE_Inventory_avg <-  YE_Inventory /365
+YE_Inventory_avg
+#Initial Risk intel for Inventory is 1 because  Inventory is a low value account
+
+#Minimum cost of the audit came out to be $27300 at 95% Confidence and $100 per transaction
+#Minimum cost of the audit came out to be $30000 at 80% Confidence and $200 per transaction
+
+```
+# [1] 8306210
+# [1] 166.6542
+# [1] 211680
+# [1] 4.247106
+# [1] 3115787
+# [1] 62.51454
+# [1] 4644153
+# [1] 22807.77
+# [1] 168144
+# [1] 1006.85
+# [1] 89.06301
+
+**QUESTION 6: Generate the Audit Budget from the Risk Assessment Matrix app**
+
+## Minimum cost of the audit came out to be $27300 at 95% Confidence and $100 per transaction
+
+## Minimum cost of the audit came out to be $30000 at 80% Confidence and $200 per transaction
+
+
+**QUESTION 7: Preliminary Tests of Transactions Controls **
+
+```{r}
+
+plot(density(ap_ledger$extended_cost))
+# ap_ledger seems to have a slight left skewed distribution
+
+plot(density(collections_journal$collection_amount))
+# collections_journal has multi modal long tail going towards right saying that most of the collections are made up by smaller transactions
+
+plot(density(daily_ar_balance$collect_cum))
+plot(density(daily_ar_balance$ar_cum))
+# by plotting the densities we can say that the collections made at any point are less than the accounts recievable at the time
+
+plot(density(expenditures$amount))
+# expenditures have a slightly right skewed multi modal distribution
+
+plot(density(sales_journal$unit_cost*sales_journal$sales_count))
+# Preliminary observation shows a right skewed graph and not normal distribution
+
+# These plots indicate that the curves of sales, returns, CGS, cash, AR and inventory are not normally distributed and pose a higher risk than expected previously. I would recommend to increase the risk intel by 1 factor for everything. 
+
+# I have changed the csv file from "risk_asst_matrix_q5.csv" to "risk_asst_matrix_q7.csv" in the file 'server.R' to see the budget changes in the RAM shiny app.
+
+
+# New Audit budget
+" Minimum cost of the audit came out to be $44400 at 95% Confidence and $100 per transaction "
+" Minimum cost of the audit came out to be $48000 at 80% Confidence and $200 per transaction "
+```
+
+
+**QUESTION 8: Employee Expenditures Audit**
+
+```{r warning=F, message=F, error=F}
+
+distinct(expenditures, expenditures$employee_no)
+hist(expenditures$amount)
+
+Overexpense<-expenditures[expenditures$amount>500,]
+distinct(Overexpense, Overexpense$employee_no) 
+# All employees have at least one spending over $500 in expenses.
+
+# Benford test 
+ben <- benford(expenditures$amount, number.of.digits=2)
+plot(ben)
+# The results of this analysis reveals that the digits 49 were in the data more often than expected.
+
+lead_digit <- extract.digits(expenditures$amount, number.of.digits=2) 
+employee_check <- cbind(expenditures,lead_digit)
+employee_check[employee_check$data.digits == 49,] %>% arrange(employee_no) %>% select(employee_no, date, amount)
+
+#Line supervisors seem to be abusing this purchase approval system.
+#Any employee submitting bills of nearly $500 twice within a month duration would be misusing the purchase approval system
+#Eg. Emp0002, Emp0012, Emp0013
+```
+
+
+**QUESTION 9: Sales Duplicates and Ommissions Error Rates** 
+
+```{r warning=F, message=F, error=F}
+
+" Invoice Numbers "
+
+duplicate_invoice <- sales_journal[duplicated(sales_journal$invoice_no), ]
+duplicate_invoice_percentage <- 100*(nrow(duplicate_invoice)/nrow(sales_journal))
+cat("\n Percent of duplicate invoices = ", duplicate_invoice_percentage)
+# Percent of duplicate invoices =  4.700949
+# This is higher than the tolerable error limit of 1%
+
+invoice <- as.numeric(substring(sales_journal$invoice_no, 2))
+invoice_min <- as.numeric(min(invoice))
+invoice_max <- as.numeric(max(invoice))
+omit <- as.data.frame(setdiff(invoice_min:invoice_max, invoice))
+n <- nrow(omit)
+omit_invoice_percentage <- 100*(n/nrow(sales_journal))
+cat("\n # of omitted invoice records = ", omit_invoice_percentage)
+# Percent of omitted invoice records =  5.017957
+# This is higher than the tolerable error limit of 1%
+
+
+" Shipping Numbers "
+
+duplicate_shipping <- sales_journal[duplicated(sales_journal$shipper_no), ]
+duplicate_shipping_percentage <- 100*(nrow(duplicate_shipping)/nrow(sales_journal))
+cat("\n Percent of duplicate shipping no = ", duplicate_shipping_percentage)
+# Percent of duplicate shipper no =  4.700949
+# This is higher than the tolerable error limit of 1%
+
+shipments <- as.numeric(substring(sales_journal$shipper_no, 2))
+shipments_min <- as.numeric(min(shipments))
+shipments_max <- as.numeric(max(shipments))
+omit1 <- as.data.frame(setdiff(shipments_min:shipments_max, shipments))
+n3 <- nrow(omit1)
+omit_shipments_percentage<-100*(n3/nrow(sales_journal))
+cat("\n # of omitted shipping no. records = ", omit_shipments_percentage)
+# Percent of omitted shipper no. records =  5.019963
+# This is higher than the tolerable error limit of 1%
+
+
+" Collection Receipt Numbers "
+
+duplicate_receiptnum <- sales_journal[duplicated(sales_journal$collection_no), ]
+duplicate_receiptnum_percentage<-100*(nrow(duplicate_receiptnum)/nrow(sales_journal))
+cat("\n Percent of duplicate collection receipt no.(crn) = ", duplicate_receiptnum_percentage)
+# Percent of duplicate collection receipt no. =  4.700949
+# This is higher than the tolerable error limit of 1%
+
+receiptnum <- as.numeric(substring(sales_journal$collection_no, 2))
+receiptnum_min <- as.numeric(min(receiptnum))
+receiptnum_max <- as.numeric(max(receiptnum))
+omit2 <- as.data.frame(setdiff(receiptnum_min:receiptnum_max, receiptnum))
+n2 <- nrow(omit2)  
+omit_receiptnum_percentage<-100*(n2/nrow(sales_journal))
+cat("\n # of omitted crn records = ", omit_receiptnum_percentage)
+# Percent of omitted crn records =  5.019963
+# This is higher than the tolerable error limit of 1%
+
+
+" Customers with credit balances "
+
+credit_sales<-collections_journal[collections_journal$sales_extended<0,]
+duplicate_creditbal <- credit_sales[duplicated(credit_sales$customer_no), ]
+duplicate_creditbal_percentage<-100*(nrow(duplicate_creditbal)/nrow(collections_journal))
+cat("\n Percent of duplicate customers with credit balances(cwcb) = ", duplicate_creditbal_percentage)
+# Percent of duplicate customers with credit balances =  0.01500563
+# This is very less than the tolerable error limit of 1%
+
+omit3<-((is.na(credit_sales$customer_no))=="TRUE")
+# summary(omit3)
+n1<-0 #because none of it is true
+cat("\n # of omitted cwcb records = ", n1)
+
+```
+
+## Only cwcb are in control, rest of the transaction processing systems are out-of-control
+
+**Summary for duplicate** - 
+
+```{r warning=F, message=F, error=F}
+Dups <- data.frame("Transaction" = c("Invoice","Shipment","CollectionReceipt","CustomerWCredit"), "Duplicates" = c(duplicate_invoice_percentage,duplicate_shipping_percentage,duplicate_receiptnum_percentage,duplicate_creditbal_percentage))
+
+Dups <- Dups %>% mutate(
+            Txn_Status = ifelse(`Duplicates`>1, "Out-of-control", "In-control"),
+            Duplicates = round(Duplicates, digits = 4))
+
+print(Dups)
+```
+
+**Summary for ommissions** - 
+
+```{r warning=F, message=F, error=F}
+Omits <- data.frame("Transaction" = c("Invoice","Shipment","CollectionReceipt","CustomerWCredit"), "Omissions" = c(omit_invoice_percentage,omit_shipments_percentage,omit_receiptnum_percentage, duplicate_creditbal_percentage))
+
+Omits <- Omits %>% mutate( Txn_Status = ifelse(`Omissions`>1, "Out-of-control", "In-control"),
+            Omissions = round(Omissions, digits = 4))
+
+print(Omits)
+```
+
+**QUESTION 10: Inventory Ommissions and Duplicates**
+
+```{r}
+# tolerable error amount = $100000
+# Max tolerable error = 100000/salesamount
+MTE<-(100000/sum(sales_journal$sales_count*sales_journal$sales_unit_price))
+MTE # The intolerable error is 1.2%
+## [1] 0.01203919
+confidence <- .95
+n <- (log(1-confidence))/log(1-MTE)
+n<-round(n)
+sample_size<-as.integer(n)
+
+## Sample Size N = 247
+
+real_credit <- real_world_credit_sales %>% select(invoice_no,sales_unit_price,sales_count)
+real_cash <- real_world_cash_sales %>% select(invoice_no,sales_unit_price,sales_count)
+
+#join real world credit sales and cash sales
+real_total <- rbind(real_credit,real_cash)
+set.seed(1234)
+#Discovery sample for Sales Journal
+
+sales_discovery <- sales_journal[runif(sample_size,1,nrow(sales_journal)),]%>%select(invoice_no,sales_unit_price,sales_count)
+
+#Discovery sample for Real world credit and cash files combined
+real_discovery <-real_total[runif(sample_size,1,nrow(real_total)),] %>%
+select(invoice_no,sales_unit_price,sales_count)
+
+samplesalesamt<-sum(sales_discovery$sales_unit_price * sales_discovery$sales_count)
+samplerealamt<-sum(real_discovery$sales_unit_price * real_discovery$sales_count)
+difference_sample_amt <- samplesalesamt - samplerealamt
+difference_sample_amt
+## [1] -5402
+#Error in sales amount in sample: -$5402
+#This negative cash flow states that the amount that's mentioned in the sales journal is less than what it actually sold for. To get an idea of the materiality we will do the same thing with the complete dataset.
+
+saleamt<-sum(sales_journal$sales_unit_price * sales_journal$sales_count)
+realamt<-sum(real_total$sales_unit_price * real_total$sales_count)
+difference_amt <- saleamt - realamt
+difference_amt
+## [1] -41434
+#This amount suggests that Sales was understated in sales journal by $41434. Now we will check if it is tolerable error or intolerable at 1%.
+saleserror<-(abs(difference_amt)/saleamt)*100
+saleserror
+## [1] 0.4988316
+#The error comes out to be 0.498% which is under the tolerable error limit of 1%.
+#Therefore, there is no material error in sales which brings us to a conclusion that sales are fairly stated.
+
+```
+
+
+**QUESTION 11: Inventory Ommissions and Duplicates**
+
+```{r warning=F, message=F, error=F}
+
+" Receiver numbers "
+
+receiver_journal <- perpetual_inventory_ledger %>% group_by(sku) %>% slice(n()) %>%
+left_join(ap_ledger, by = "sku")
+duplicate_receiver <- receiver_journal[duplicated(receiver_journal$receiver_no), ]
+n <- nrow(duplicate_receiver)
+cat("\n # of duplicate receivers = ", n)
+duplicate_receiver <- (n/nrow(receiver_journal))
+
+receiver <- as.numeric(substring(receiver_journal$receiver_no, 4))
+receiver_min <- as.numeric(min(receiver))
+receiver_max <- as.numeric(max(receiver))
+omit <- as.data.frame(setdiff(receiver_min:receiver_max, receiver))
+n <- nrow(omit)
+cat("\n # of omitted receivers = ", n, "\n\n")
+omit_receiver <- (n/nrow(receiver_journal))
+
+
+" Purchase Order numbers "
+
+purchase_journal <- purchase_journal %>% group_by(sku) %>% slice(n()) %>%
+left_join(perpetual_inventory_ledger, by = "sku")
+duplicate_purchase <- purchase_journal[duplicated(purchase_journal$po_no), ]
+n <- nrow(duplicate_purchase)
+cat("\n # of duplicate purchase order numbers = ", n)
+duplicate_purchase <- 100*(n/nrow(purchase_journal))
+
+purchase <- as.numeric(substring(purchase_journal$po_no, 4))
+purchase_min <- as.numeric(min(purchase))
+purchase_max <- as.numeric(max(purchase))
+omit_purchase <- as.data.frame(setdiff(purchase_min:purchase_max, purchase))
+n <- nrow(omit_purchase)
+cat("\n # of omitted purchase order numbers = ", n)
+omit_purchase <- 100*(n/nrow(purchase_journal))
+
+```
+
+Assuming that the **tolerable error rate** is 1%, I have summarised the finds below.
+
+**Summarising for Inventory Duplicates** -
+
+```{r warning=F, message=F, error=F}
+Duplicates <- data.frame("Transaction" = c("ReceiverNumbers","PurchaseOrders"), "Duplicates" = c(duplicate_receiver,duplicate_purchase))
+
+Duplicates <- Duplicates %>% mutate(
+            Txn_Status = ifelse(`Duplicates`>1, "Out-of-control", "In-control"),
+            Duplicates = round(Duplicates, digits = 4))
+
+print(Duplicates)
+```
+
+**Summary for Inventory Ommissions** -
+
+```{r warning=F, message=F, error=F}
+Omits <- data.frame("Transaction" = c("ReceiverNumbers","PurchaseOrders"), "Omissions" = c(omit_receiver, omit_purchase))
+
+Omits <- Omits %>% mutate( Txn_Status = ifelse(`Omissions`>1, "Out-of-control", "In-control"),
+            Omissions = round(Omissions, digits = 4))
+
+print(Omits)
+```
+
+
+**QUESTION 12: Inventory Stock on Hand with a Turnover of less than 5 times**
+
+```{r warning=F, message=F, error=F}
+
+Interim_Inventory <-perpetual_inventory_ledger %>% group_by(sku) %>%
+                    inner_join(fyear_begin_inventory_ledger, by="sku") %>% 
+                    filter(date >= "2020-10-01" & date >= "2020-10-31") %>%
+                    mutate(inv = unit_cost * stock_on_hand.x)%>%
+                    summarise(AnnualInv = sum(inv))
+
+Annual_Inventory <-perpetual_inventory_ledger %>% group_by(sku) %>%
+                    inner_join(fyear_begin_inventory_ledger, by="sku") %>%
+                    filter(date < "2020-12-01") %>%
+                    mutate(inv = unit_cost * stock_on_hand.x)%>%
+                    summarise(AnnualInv = sum(inv))
+
+
+table <- bind_cols(Interim_Inventory,Annual_Inventory[,2],.id=NULL)
+names(table)[names(table) == "AnnualInv"] <-  "InterimInventory"
+names(table)[names(table) == "AnnualInv1"] <-  "AnnualInventory"
+
+table <- table %>% mutate( TimesFive = 5 * InterimInventory,
+                           LowTurnover = ifelse(TimesFive>=AnnualInventory,"Yes", "No") )
+
+table
+```
+
+
+**QUESTION 13: Inventory Stock on Hand Lower of Cost or Market**
+
+```{r warning=F, message=F, error=F}
+
+real_world_ye_inventory[is.na(real_world_ye_inventory)] <- 0
+inventory_count_differences <- perpetual_inventory_ledger %>%
+                                group_by(sku) %>%
+                                slice(n()) %>% 
+                                left_join(real_world_ye_inventory, by="sku") %>%
+                                filter(exception != "No exception, count is accurate") %>%
+                                mutate(err_perpetual = stock_on_hand - ye_stock_on_hand) %>%
+                                select(sku,stock_on_hand,ye_stock_on_hand,unit_cost,actual_unit_market,
+                                      err_perpetual,count_exception,
+                                      exception) %>%
+                                mutate(ye_cost = stock_on_hand * unit_cost,
+                                       ye_market = ye_stock_on_hand * actual_unit_market,
+                                       inv_markdown = ye_cost - ye_market) %>%
+                                select(sku, ye_cost, ye_market, inv_markdown) %>%
+                                as.data.frame() 
+
+total_inv_markdown <- sum(inventory_count_differences$inv_markdown)
+cat("\n Total Amount to Markdown Client's Trial Balance Inventory Amount(by LOCOM rule) = ",
+total_inv_markdown, "\n\n")
+
+kable(inventory_count_differences, caption = "Market and Cost of Inventory by SKU", booktabs = T) %>%
+      kable_styling(bootstrap_options = "striped") %>%
+      footnote (general = "",
+                symbol = c(round(total_inv_markdown,2)),
+                general_title = "Total Markdown for LOCOM rule",
+                title_format = c("italic", "underline")
+                )
+
+```
+
+
+**QUESTION 14: Write the SAS 115 Letter to Management**
+
+In planning and performing our audit of the financial statements of Tesla INC (TSLA) as of and for the year ended December 31, 2020, in accordance with auditing standards generally accepted in the United States of America, we considered the Company’s internal control over financial reporting (internal control) as a basis for designing our auditing procedures for the purpose of expressing our opinion on the financial statements, but not for the purpose of expressing an opinion on the effectiveness of the Company’s internal control. Accordingly, we do not express an opinion on the effectiveness of the Company’s internal control. Our consideration of internal control was for the limited purpose described in the preceding paragraph and was not designed to identify all deficiencies in internal control that might be significant deficiencies or material weaknesses and therefore, there can be no assurance that all deficiencies, significant deficiencies, or material weaknesses have been identified. However, as discussed below, we identified certain deficiencies in internal control that we consider to be material weaknesses shipment and collection receipt. A deficiency in internal control exists when the design or operation of a control does not allow management or employees, in the normal course of performing their assigned functions, to prevent,
+or detect and correct misstatements on a timely basis. A material weakness is a deficiency, or a combination of deficiencies, in internal control, such that there is a reasonable possibility that a material misstatement of the entity’s financial statements will not be prevented, or detected and corrected on a timely basis. We consider the following deficiencies in the Company’s internal control to be material weaknesses: 
+(i)	Our primary investigation showed that the major value accounts of the firm are non-normal distributions which pose a higher risk to the audit. This continuation of non-normal distributions will increase the risk of the audit as compared to prior years.
+A significant deficiency is a deficiency, or a combination of deficiencies, in internal control that is less severe than a material weakness, yet important enough to merit attention by those charged with governance. We consider the following deficiencies in the Company’s internal control to be significant deficiencies: shipment and collection receipt This communication is intended solely for the information and use of management, others within the organization, and is not intended to be and should not be used by anyone other than these specified parties.
+
+(i)	Upon further investigation it was made clear that some employees have not been entirely honest with the expenditure policies of tesla because they have been submitting receipts of more than $490 and less than $500 with in a span of 30 days.
+(ii)	There were some other irregularities in Duplicates and omissions of Shipment orders and Invoice numbers which was higher than 1%. But since the value was less than 5% we consider it to be material errors and suggest management take steps to reduce it.
+
+This communication is intended solely for the information and use of management, others within the organization, and is not intended to be and should not be used by anyone other than these specified parties.
