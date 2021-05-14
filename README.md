@@ -16,6 +16,7 @@ or detect and correct misstatements on a timely basis. A material weakness is a 
 deficiencies, in internal control, such that there is a reasonable possibility that a material misstatement of the entity’s 
 financial statements will not be prevented, or detected and corrected on a timely basis. We consider the following 
 deficiencies in the Company’s internal control to be material weaknesses: 
+
 (i) Our primary investigation showed that the major value accounts of the firm are non-normal distributions 
 which pose a higher risk to the audit. This continuation of non-normal distributions will increase the risk 
 of the audit as compared to prior years.
@@ -23,10 +24,13 @@ A significant deficiency is a deficiency, or a combination of deficiencies, in i
 material weakness, yet important enough to merit attention by those charged with governance. We consider the 
 following deficiencies in the Company’s internal control to be significant deficiencies: shipment and collection receipt 
 This communication is intended solely for the information and use of management, others within the organization, 
-and is not intended to be and should not be used by anyone other than these specified parties.(i) Upon further investigation it was made clear that some employees have not been entirely honest with 
+and is not intended to be and should not be used by anyone other than these specified parties.
+
+(ii) Upon further investigation it was made clear that some employees have not been entirely honest with 
 the expenditure policies of tesla because they have been submitting receipts of more than $490 and less 
 than $500 with in a span of 30 days.
-(ii) There were some other irregularities in Duplicates and omissions of Shipment orders and Invoice 
+
+(iii) There were some other irregularities in Duplicates and omissions of Shipment orders and Invoice 
 numbers which was higher than 1%. But since the value was less than 5% we consider it to be material 
 errors and suggest management take steps to reduce it.
 This communication is intended solely for the information and use of management, others within the organization, 
